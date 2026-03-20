@@ -95,98 +95,97 @@
 <body>
 
     <div id="loginScreen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%;">
-    <div class="panel" style="text-align: center; max-width: 350px;">
-        <h1 style="color: var(--primary); margin-bottom: 5px;">TimeFlow ✨</h1>
-        <p style="color: var(--text-muted); margin-bottom: 25px;">Please sign in to access your schedule.</p>
-        <button onclick="signInWithGoogle()" style="width: 100%; font-size: 16px; padding: 14px;">
-            🌐 Sign in with Google
-        </button>
-    </div>
-</div>
-
-<div id="mainApp" style="display: none; width: 100%; justify-content: center;">
-    <div class="app-container">
-        <button onclick="logOut()" style="background-color: var(--danger); margin-top: 20px;">🚪 Log Out</button>
-    </div>
-</div>
-    <div class="app-container">
-        
-        <div class="app-header">
-            <h1>TimeFlow ✨</h1>
-            <p>Your AI-Powered Study & Schedule Tracker</p>
+        <div class="panel" style="text-align: center; max-width: 350px;">
+            <h1 style="color: var(--primary); margin-bottom: 5px;">TimeFlow ✨</h1>
+            <p style="color: var(--text-muted); margin-bottom: 25px;">Please sign in to access your schedule.</p>
+            <button onclick="signInWithGoogle()" style="width: 100%; font-size: 16px; padding: 14px;">
+                🌐 Sign in with Google
+            </button>
         </div>
+    </div>
 
-        <div class="motivation-card">
-            <span class="motivation-text" id="motivationText">"Loading your daily fuel..."</span>
-            <button class="refresh-btn" onclick="generateMotivation()" title="Get new motivation">↻</button>
-        </div>
+    <div id="mainApp" style="display: none; width: 100%; justify-content: center;">
+        <div class="app-container">
+            
+            <div class="app-header">
+                <h1>TimeFlow ✨</h1>
+                <p>Your AI-Powered Study & Schedule Tracker</p>
+            </div>
 
-        <div class="panel">
-            <h3>📊 Progress Dashboard</h3>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value" id="statTasks">0</div>
-                    <div class="stat-label">Tasks Done</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="statMins">0m</div>
-                    <div class="stat-label">Focus Time</div>
+            <div class="motivation-card">
+                <span class="motivation-text" id="motivationText">"Loading your daily fuel..."</span>
+                <button class="refresh-btn" onclick="generateMotivation()" title="Get new motivation">↻</button>
+            </div>
+
+            <div class="panel">
+                <h3>📊 Progress Dashboard</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTasks">0</div>
+                        <div class="stat-label">Tasks Done</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statMins">0m</div>
+                        <div class="stat-label">Focus Time</div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="panel">
-            <h3>🛡️ Protected Time Blocks</h3>
-            <p style="font-size: 13px; color: var(--text-muted); margin-top: -5px; margin-bottom: 15px; line-height: 1.4;">Set non-negotiable dates. The AI will refuse to schedule tasks here.</p>
-            <div class="input-group-wrap">
-                <input type="text" id="blockReason" class="full-width" placeholder="Ex: Date with Kat, Rest Day...">
-                <input type="date" id="blockDate" class="half-width">
-                <button class="half-width" style="background-color: var(--danger);" onclick="addBlockedDate()">🔒 Lock Date</button>
+            <div class="panel">
+                <h3>🛡️ Protected Time Blocks</h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: -5px; margin-bottom: 15px; line-height: 1.4;">Set non-negotiable dates. The AI will refuse to schedule tasks here.</p>
+                <div class="input-group-wrap">
+                    <input type="text" id="blockReason" class="full-width" placeholder="Ex: Date with Kat, Rest Day...">
+                    <input type="date" id="blockDate" class="half-width">
+                    <button class="half-width" style="background-color: var(--danger);" onclick="addBlockedDate()">🔒 Lock Date</button>
+                </div>
+                <ul id="blockList"></ul>
             </div>
-            <ul id="blockList"></ul>
-        </div>
 
-        <div class="panel">
-            <h3>✅ Daily Habits</h3>
-            <div class="input-group-wrap">
-                <input type="text" id="fixedInput" class="full-width" placeholder="Ex: Daily review set">
-                <input type="time" id="fixedTime" class="half-width" title="Time (Optional)">
-                <button class="half-width" onclick="addHabit()">Add Habit</button>
+            <div class="panel">
+                <h3>✅ Daily Habits</h3>
+                <div class="input-group-wrap">
+                    <input type="text" id="fixedInput" class="full-width" placeholder="Ex: Daily review set">
+                    <input type="time" id="fixedTime" class="half-width" title="Time (Optional)">
+                    <button class="half-width" onclick="addHabit()">Add Habit</button>
+                </div>
+                <ul id="fixedList"></ul>
             </div>
-            <ul id="fixedList"></ul>
-        </div>
 
-        <div class="panel">
-            <h3>🤖 AI Task Estimator</h3>
-            <div class="input-group-wrap">
-                <input type="text" id="aiInput" class="full-width" placeholder="Ex: Review Math formulas">
-                <select id="aiCategory" class="third-width">
-                    <option value="School">🎓 School</option>
-                    <option value="Work">💼 Work</option>
-                    <option value="Personal">🌱 Personal</option>
-                </select>
-                <input type="date" id="aiDate" class="third-width" title="Target Date">
-                <button id="aiBtn" class="third-width" onclick="computeAITask()">✨ Estimate</button>
+            <div class="panel">
+                <h3>🤖 AI Task Estimator</h3>
+                <div class="input-group-wrap">
+                    <input type="text" id="aiInput" class="full-width" placeholder="Ex: Review Math formulas">
+                    <select id="aiCategory" class="third-width">
+                        <option value="School">🎓 School</option>
+                        <option value="Work">💼 Work</option>
+                        <option value="Personal">🌱 Personal</option>
+                    </select>
+                    <input type="date" id="aiDate" class="third-width" title="Target Date">
+                    <button id="aiBtn" class="third-width" onclick="computeAITask()">✨ Estimate</button>
+                </div>
+                <p id="aiStatus" style="font-size: 13px; color: var(--primary); margin-top: -5px; display: none; font-weight: 700; text-align: center;">⏳ AI is analyzing task...</p>
             </div>
-            <p id="aiStatus" style="font-size: 13px; color: var(--primary); margin-top: -5px; display: none; font-weight: 700; text-align: center;">⏳ AI is analyzing task...</p>
-        </div>
 
-        <div class="panel">
-            <h3>📅 Schedule & Deadlines</h3>
-            <div class="input-group-wrap">
-                <input type="text" id="schedInput" class="full-width" placeholder="Ex: Finish website logic">
-                <select id="schedCategory" class="third-width">
-                    <option value="School">🎓 School</option>
-                    <option value="Work">💼 Work</option>
-                    <option value="Personal">🌱 Personal</option>
-                </select>
-                <input type="date" id="schedDate" class="third-width" title="Target Date">
-                <input type="number" id="schedEst" class="third-width" placeholder="Est. Mins">
-                <button class="full-width" onclick="addMasterTask()">Add Manual Task</button>
+            <div class="panel">
+                <h3>📅 Schedule & Deadlines</h3>
+                <div class="input-group-wrap">
+                    <input type="text" id="schedInput" class="full-width" placeholder="Ex: Finish website logic">
+                    <select id="schedCategory" class="third-width">
+                        <option value="School">🎓 School</option>
+                        <option value="Work">💼 Work</option>
+                        <option value="Personal">🌱 Personal</option>
+                    </select>
+                    <input type="date" id="schedDate" class="third-width" title="Target Date">
+                    <input type="number" id="schedEst" class="third-width" placeholder="Est. Mins">
+                    <button class="full-width" onclick="addMasterTask()">Add Manual Task</button>
+                </div>
+                <ul id="schedList"></ul>
             </div>
-            <ul id="schedList"></ul>
-        </div>
 
+            <button onclick="logOut()" style="background-color: var(--danger); margin-top: 10px;">🚪 Log Out</button>
+
+        </div>
     </div>
 
     <div id="aiModal">
@@ -200,9 +199,8 @@
     <script type="module">
         // 1. IMPORT FIREBASE MODULAR SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-// BAGONG IMPORT PARA SA LOGIN:
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
         // 2. YOUR FIREBASE CONFIGURATION
         const firebaseConfig = {
@@ -215,53 +213,18 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signO
             measurementId: "G-KHV8FLJCQL"
         };
 
-        const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
-
-        // 3. INITIALIZE FIREBASE
+        // 3. INITIALIZE FIREBASE & AUTH
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
-        // LISTENER KUNG MAY NAKA-LOGIN O WALA
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        // May naka-login! Ipakita ang app, itago ang login screen.
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'flex';
-        
-        // Optional: Pwede mong i-console.log para makita mo info mo
-        console.log("Welcome,", user.displayName);
-    } else {
-        // Walang naka-login. Ipakita ang login screen, itago ang app.
-        document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('mainApp').style.display = 'none';
-    }
-});
-
-// FUNCTION PARA SA GOOGLE SIGN-IN BUTTON
-window.signInWithGoogle = function() {
-    signInWithPopup(auth, provider)
-        .then((result) => {
-            console.log("Successfully logged in!");
-        }).catch((error) => {
-            console.error("Error logging in:", error.message);
-            alert("Login failed: " + error.message);
-        });
-};
-
-// FUNCTION PARA SA LOGOUT BUTTON
-window.logOut = function() {
-    signOut(auth).then(() => {
-        console.log("Logged out successfully");
-    }).catch((error) => {
-        console.error("Logout error", error);
-    });
-};
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
 
         // ==========================================
         // GLOBAL VARIABLES & UTILS
         // ==========================================
         let blockedDatesArray = [];
+        let totalTasks = 0; let totalMins = 0;
+        let listenersStarted = false; // Prevent duplicate listeners
         
         function formatAmPm(timeStr) { let [h, m] = timeStr.split(':'); let ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:${m} ${ampm}`; }
         function formatDateReadable(dateStr) { if(!dateStr) return 'Today'; return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
@@ -270,6 +233,11 @@ window.logOut = function() {
             const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
             const s = String(totalSeconds % 60).padStart(2, '0');
             return `${h}:${m}:${s}`;
+        }
+
+        window.updateDashboard = function() { 
+            document.getElementById('statTasks').innerText = totalTasks; 
+            document.getElementById('statMins').innerText = totalMins + 'm'; 
         }
 
         // --- MOTIVATION ---
@@ -297,140 +265,150 @@ window.logOut = function() {
             textElement.style.opacity = 0;
             setTimeout(() => { textElement.innerText = `"${motivations[randomIndex]}"`; textElement.style.opacity = 1; textElement.style.transition = "opacity 0.3s ease-in-out"; }, 200);
         }
-        window.generateMotivation(); // Call on load
+        window.generateMotivation(); 
 
         // ==========================================
-        // REAL-TIME DATABASE LISTENERS
+        // AUTHENTICATION LOGIC
         // ==========================================
-
-        // 1. HABITS LISTENER
-        onSnapshot(collection(db, "habits"), (snapshot) => {
-            const list = document.getElementById('fixedList');
-            list.innerHTML = '';
-            snapshot.forEach((document) => {
-                const data = document.data();
-                const id = document.id;
-                let timeBadge = data.time ? `<span class="badge badge-habit-time">⏰ ${formatAmPm(data.time)}</span>` : '';
-                const li = document.createElement('li');
-                li.style.flexDirection = 'row'; li.style.alignItems = 'center'; li.style.justifyContent = 'space-between'; li.style.padding = '14px 18px';
-                li.innerHTML = `
-                    <label class="checkbox-item" style="flex: 1;">
-                        <input type="checkbox" ${data.completed ? 'checked' : ''} onclick="toggleHabit('${id}', this.checked)"> 
-                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <span class="${data.completed ? 'completed' : ''}">${data.task}</span>${timeBadge}
-                        </div>
-                    </label>
-                    <button class="delete-btn" onclick="deleteFromDB('habits', '${id}')">×</button>
-                `;
-                list.appendChild(li);
-            });
-        });
-
-        // 2. PROTECTED BLOCKS LISTENER
-        onSnapshot(collection(db, "blocks"), (snapshot) => {
-            const list = document.getElementById('blockList');
-            list.innerHTML = '';
-            blockedDatesArray = []; // Reset local array
-            
-            snapshot.forEach((document) => {
-                const data = document.data();
-                const id = document.id;
-                blockedDatesArray.push(data); // Add to local check
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Nakalogin! Ipakita ang app.
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'flex';
+                console.log("Welcome,", user.displayName);
                 
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <div class="task-header">
-                        <div>
-                            <div class="task-title" style="color: var(--danger);">🔒 ${data.reason}</div>
-                            <div class="task-badges"><span class="badge" style="background: #fee2e2; color: #991b1b;">🗓️ ${formatDateReadable(data.date)}</span></div>
-                        </div>
-                        <button class="delete-btn" onclick="deleteFromDB('blocks', '${id}')">×</button>
-                    </div>
-                `;
-                list.appendChild(li);
-            });
+                // SISIMULAN LANG BASAHIN ANG DATABASE PAG NAKA-LOGIN NA
+                startDatabaseListeners();
+            } else {
+                // Walang nakalogin. Ipakita ang login screen.
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('mainApp').style.display = 'none';
+            }
         });
 
-        // 3. MASTER TASKS & DASHBOARD LISTENER
-        onSnapshot(collection(db, "tasks"), (snapshot) => {
-            const list = document.getElementById('schedList');
-            let tTasks = 0; let tMins = 0;
+        window.signInWithGoogle = function() {
+            signInWithPopup(auth, provider).catch((error) => { alert("Login failed: " + error.message); });
+        };
 
-            // Intelligent DOM updating so running timers don't get destroyed
-            snapshot.docChanges().forEach((change) => {
-                const data = change.doc.data();
-                const id = change.doc.id;
-                const existingLi = document.getElementById(`task-${id}`);
+        window.logOut = function() {
+            signOut(auth).then(() => { window.location.reload(); });
+        };
 
-                if (change.type === "added" && data.status === 'pending') {
-                    let dateBadge = data.targetDate ? `<span class="badge badge-date">🗓️ ${formatDateReadable(data.targetDate)}</span>` : `<span class="badge badge-date">🗓️ Today</span>`;
-                    let estString = data.estMins > 0 ? `<span class="badge badge-est">⏱️ Est: ${data.estMins}m</span>` : '';
-                    let catClass = data.category === 'School' ? 'cat-school' : (data.category === 'Work' ? 'cat-work' : 'cat-personal');
-                    let catEmoji = data.category === 'School' ? '🎓' : (data.category === 'Work' ? '💼' : '🌱');
-                    let catBadge = `<span class="badge ${catClass}">${catEmoji} ${data.category}</span>`;
+        // ==========================================
+        // DATABASE LISTENERS (Wrapped in a function)
+        // ==========================================
+        function startDatabaseListeners() {
+            if (listenersStarted) return; // Wag uulitin pag naka-start na
+            listenersStarted = true;
 
+            // 1. HABITS LISTENER
+            onSnapshot(collection(db, "habits"), (snapshot) => {
+                const list = document.getElementById('fixedList');
+                list.innerHTML = '';
+                snapshot.forEach((document) => {
+                    const data = document.data(); const id = document.id;
+                    let timeBadge = data.time ? `<span class="badge badge-habit-time">⏰ ${formatAmPm(data.time)}</span>` : '';
                     const li = document.createElement('li');
-                    li.id = `task-${id}`; // Lagyan ng ID para madaling hanapin
-                    li.dataset.id = id; li.dataset.estMins = data.estMins; li.dataset.taskName = data.taskName; li.dataset.secondsElapsed = 0;
-
+                    li.style.flexDirection = 'row'; li.style.alignItems = 'center'; li.style.justifyContent = 'space-between'; li.style.padding = '14px 18px';
                     li.innerHTML = `
-                        <div class="task-header"><div><div class="task-title">${data.taskName}</div><div class="task-badges">${catBadge} ${dateBadge} ${estString}</div></div><button class="delete-btn" onclick="deleteFromDB('tasks', '${id}')">×</button></div>
-                        <div class="timer-section"><div class="timer-display">00:00:00</div>
-                            <div class="timer-btns">
-                                <button class="icon-btn play-btn" onclick="startTimer(this)">▶️ Play</button>
-                                <button class="icon-btn pause-btn" onclick="pauseTimer(this)" style="display:none;">⏸️ Pause</button>
-                                <button class="icon-btn stop-btn" onclick="stopTimer(this)">⏹️ Stop</button>
-                                <button class="icon-btn done-btn" onclick="markDone(this)">✅ Done</button>
+                        <label class="checkbox-item" style="flex: 1;">
+                            <input type="checkbox" ${data.completed ? 'checked' : ''} onclick="toggleHabit('${id}', this.checked)"> 
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span class="${data.completed ? 'completed' : ''}">${data.task}</span>${timeBadge}
                             </div>
+                        </label>
+                        <button class="delete-btn" onclick="deleteFromDB('habits', '${id}')">×</button>
+                    `;
+                    list.appendChild(li);
+                });
+            });
+
+            // 2. PROTECTED BLOCKS LISTENER
+            onSnapshot(collection(db, "blocks"), (snapshot) => {
+                const list = document.getElementById('blockList');
+                list.innerHTML = ''; blockedDatesArray = []; 
+                snapshot.forEach((document) => {
+                    const data = document.data(); const id = document.id;
+                    blockedDatesArray.push(data); 
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="task-header">
+                            <div>
+                                <div class="task-title" style="color: var(--danger);">🔒 ${data.reason}</div>
+                                <div class="task-badges"><span class="badge" style="background: #fee2e2; color: #991b1b;">🗓️ ${formatDateReadable(data.date)}</span></div>
+                            </div>
+                            <button class="delete-btn" onclick="deleteFromDB('blocks', '${id}')">×</button>
                         </div>
                     `;
                     list.appendChild(li);
-                }
-                
-                if (change.type === "modified" && data.status === 'done' && existingLi) {
-                    existingLi.remove(); // Remove from pending list
-                }
-
-                if (change.type === "removed" && existingLi) {
-                    existingLi.remove(); // Remove if deleted
-                }
+                });
             });
 
-            // Update Dashboard Stats
-            snapshot.forEach((document) => {
-                const data = document.data();
-                if (data.status === 'done') {
-                    tTasks++;
-                    tMins += (data.actualMins || 0);
-                }
+            // 3. MASTER TASKS & DASHBOARD LISTENER
+            onSnapshot(collection(db, "tasks"), (snapshot) => {
+                const list = document.getElementById('schedList');
+                totalTasks = 0; totalMins = 0; 
+
+                snapshot.docChanges().forEach((change) => {
+                    const data = change.doc.data(); const id = change.doc.id;
+                    const existingLi = document.getElementById(`task-${id}`);
+
+                    if (change.type === "added" && data.status === 'pending') {
+                        let dateBadge = data.targetDate ? `<span class="badge badge-date">🗓️ ${formatDateReadable(data.targetDate)}</span>` : `<span class="badge badge-date">🗓️ Today</span>`;
+                        let estString = data.estMins > 0 ? `<span class="badge badge-est">⏱️ Est: ${data.estMins}m</span>` : '';
+                        let catClass = data.category === 'School' ? 'cat-school' : (data.category === 'Work' ? 'cat-work' : 'cat-personal');
+                        let catEmoji = data.category === 'School' ? '🎓' : (data.category === 'Work' ? '💼' : '🌱');
+                        let catBadge = `<span class="badge ${catClass}">${catEmoji} ${data.category}</span>`;
+
+                        const li = document.createElement('li');
+                        li.id = `task-${id}`; li.dataset.id = id; li.dataset.estMins = data.estMins; li.dataset.taskName = data.taskName; li.dataset.secondsElapsed = 0;
+
+                        li.innerHTML = `
+                            <div class="task-header"><div><div class="task-title">${data.taskName}</div><div class="task-badges">${catBadge} ${dateBadge} ${estString}</div></div><button class="delete-btn" onclick="deleteFromDB('tasks', '${id}')">×</button></div>
+                            <div class="timer-section"><div class="timer-display">00:00:00</div>
+                                <div class="timer-btns">
+                                    <button class="icon-btn play-btn" onclick="startTimer(this)">▶️ Play</button>
+                                    <button class="icon-btn pause-btn" onclick="pauseTimer(this)" style="display:none;">⏸️ Pause</button>
+                                    <button class="icon-btn stop-btn" onclick="stopTimer(this)">⏹️ Stop</button>
+                                    <button class="icon-btn done-btn" onclick="markDone(this)">✅ Done</button>
+                                </div>
+                            </div>
+                        `;
+                        list.appendChild(li);
+                    }
+                    if (change.type === "modified" && data.status === 'done' && existingLi) { existingLi.remove(); }
+                    if (change.type === "removed" && existingLi) { existingLi.remove(); }
+                });
+
+                // Update Stats
+                snapshot.forEach((document) => {
+                    const data = document.data();
+                    if (data.status === 'done') {
+                        totalTasks++;
+                        totalMins += (data.actualMins || 0);
+                    }
+                });
+                updateDashboard();
             });
-            document.getElementById('statTasks').innerText = tTasks;
-            document.getElementById('statMins').innerText = tMins + 'm';
-        });
+        } // End of startDatabaseListeners
 
         // ==========================================
         // APP ACTIONS (Writing to Firebase)
         // ==========================================
 
-        window.deleteFromDB = async function(collectionName, id) {
-            await deleteDoc(doc(db, collectionName, id));
-        }
+        window.deleteFromDB = async function(collectionName, id) { await deleteDoc(doc(db, collectionName, id)); }
 
         window.addHabit = async function() {
-            const input = document.getElementById('fixedInput').value.trim();
-            const timeInput = document.getElementById('fixedTime').value;
+            const input = document.getElementById('fixedInput').value.trim(); const timeInput = document.getElementById('fixedTime').value;
             if (!input) return;
             await addDoc(collection(db, "habits"), { task: input, time: timeInput, completed: false });
             document.getElementById('fixedInput').value = ''; document.getElementById('fixedTime').value = ''; 
         }
 
-        window.toggleHabit = async function(id, isChecked) {
-            await updateDoc(doc(db, "habits", id), { completed: isChecked });
-        }
+        window.toggleHabit = async function(id, isChecked) { await updateDoc(doc(db, "habits", id), { completed: isChecked }); }
 
         window.addBlockedDate = async function() {
-            const reason = document.getElementById('blockReason').value.trim();
-            const dateVal = document.getElementById('blockDate').value;
+            const reason = document.getElementById('blockReason').value.trim(); const dateVal = document.getElementById('blockDate').value;
             if (!reason || !dateVal) return;
             await addDoc(collection(db, "blocks"), { reason: reason, date: dateVal });
             document.getElementById('blockReason').value = ''; document.getElementById('blockDate').value = '';
@@ -443,10 +421,7 @@ window.logOut = function() {
             const cat = category || document.getElementById('schedCategory').value;
 
             if (!task) return;
-            await addDoc(collection(db, "tasks"), {
-                taskName: task, targetDate: dateVal, estMins: parseInt(est), category: cat, status: 'pending', actualMins: 0
-            });
-            
+            await addDoc(collection(db, "tasks"), { taskName: task, targetDate: dateVal, estMins: parseInt(est), category: cat, status: 'pending', actualMins: 0 });
             document.getElementById('schedInput').value = ''; document.getElementById('schedDate').value = ''; document.getElementById('schedEst').value = '';
         }
 
@@ -455,7 +430,6 @@ window.logOut = function() {
             const btn = document.getElementById('aiBtn'); const status = document.getElementById('aiStatus');
             
             if (!input.value.trim() || !dateInput.value) { alert("Please enter a task and select a target date first!"); return; }
-
             const isBlocked = blockedDatesArray.find(b => b.date === dateInput.value);
             if (isBlocked) { alert(`🚨 Oops! You blocked this date for: ${isBlocked.reason}. The AI respects your boundaries. Please choose another date!`); return; }
 
@@ -469,20 +443,16 @@ window.logOut = function() {
         // ==========================================
         // TIMER LOGIC & CLOUD SYNCING
         // ==========================================
-
         window.startTimer = function(btn) {
             const li = btn.closest('li'); const display = li.querySelector('.timer-display');
             btn.style.display = 'none'; li.querySelector('.pause-btn').style.display = 'inline-block';
             li.timerInterval = setInterval(() => { let currentSecs = parseInt(li.dataset.secondsElapsed); currentSecs += 60; li.dataset.secondsElapsed = currentSecs; display.innerText = formatTime(currentSecs); }, 1000); 
         }
-        
         window.pauseTimer = function(btn) { const li = btn.closest('li'); clearInterval(li.timerInterval); btn.style.display = 'none'; li.querySelector('.play-btn').style.display = 'inline-block'; }
         
         window.stopTimer = async function(btn) { 
             const li = btn.closest('li'); clearInterval(li.timerInterval); 
             let actualMins = Math.floor(parseInt(li.dataset.secondsElapsed) / 60); 
-            
-            // I-save na as 'done' sa database
             await updateDoc(doc(db, "tasks", li.dataset.id), { status: 'done', actualMins: actualMins });
             analyzePerformance(li.dataset.taskName, parseInt(li.dataset.estMins), actualMins, false); 
         }
@@ -490,8 +460,6 @@ window.logOut = function() {
         window.markDone = async function(btn) { 
             const li = btn.closest('li'); clearInterval(li.timerInterval); 
             let actualMins = Math.floor(parseInt(li.dataset.secondsElapsed) / 60); 
-            
-            // I-save na as 'done' sa database
             await updateDoc(doc(db, "tasks", li.dataset.id), { status: 'done', actualMins: actualMins });
             analyzePerformance(li.dataset.taskName, parseInt(li.dataset.estMins), actualMins, true); 
         }

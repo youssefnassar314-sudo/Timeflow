@@ -506,9 +506,20 @@ onSnapshot(collection(db, "habits"), (snapshot) => {
             status.style.display = 'block';
             status.innerText = "⏳ Gemini AI is calculating...";
 
-            // 3. API KEY MO DITO
-            const GEMINI_API_KEY = "AIzaSyAnoQXDgR5YLz21x3AQAGy9NmXzd8Gby5A"; 
+            // 3. KUNIN ANG KEY SA BROWSER MEMORY
+let GEMINI_API_KEY = localStorage.getItem("timeflow_gemini_key");
 
+if (!GEMINI_API_KEY) {
+    GEMINI_API_KEY = prompt("🔐 Enter your Gemini API Key to use the AI Estimator:");
+    if (GEMINI_API_KEY) {
+        localStorage.setItem("timeflow_gemini_key", GEMINI_API_KEY.trim());
+    } else {
+        alert("Kailangan ng API Key para gumana ang AI, bes!");
+        btn.disabled = false;
+        status.style.display = 'none';
+        return;
+    }
+}
             // 4. ANG INSTRUCTION (PROMPT) NATIN KAY GEMINI
             // Mapapansin mo, nilagyan ko ng context na ECE student ka para mas accurate ang computation niya sa Math/Engineering subjects!
             const promptText = `

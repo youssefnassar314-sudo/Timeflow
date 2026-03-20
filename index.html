@@ -197,12 +197,12 @@
     </div>
 
     <script type="module">
-        // 1. IMPORT FIREBASE MODULAR SDKs
+        // 1. IMPORTS
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-        // 2. YOUR FIREBASE CONFIGURATION
+        // 2. FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBLPScss8qg8RjhAHaNJQBO8AuiavNs3o4",
             authDomain: "timeflow-web-a03ae.firebaseapp.com",
@@ -213,28 +213,34 @@
             measurementId: "G-KHV8FLJCQL"
         };
 
-        // 3. INITIALIZE FIREBASE & AUTH
+        // 3. INITIALIZATION
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
         // ==========================================
-        // GLOBAL VARIABLES & UTILS
+        // STATE & UTILS
         // ==========================================
         let blockedDatesArray = [];
-        let totalTasks = 0; let totalMins = 0;
-        let listenersStarted = false; // Prevent duplicate listeners
-        
-        function formatAmPm(timeStr) { let [h, m] = timeStr.split(':'); let ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:${m} ${ampm}`; }
-        function formatDateReadable(dateStr) { if(!dateStr) return 'Today'; return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+        let totalTasks = 0; 
+        let totalMins = 0;
+        let listenersStarted = false; 
+
+        function formatAmPm(timeStr) { 
+            if(!timeStr) return '';
+            let [h, m] = timeStr.split(':'); let ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:${m} ${ampm}`; 
+        }
+        function formatDateReadable(dateStr) { 
+            if(!dateStr) return 'Today'; 
+            return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); 
+        }
         function formatTime(totalSeconds) {
             const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
             const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
             const s = String(totalSeconds % 60).padStart(2, '0');
             return `${h}:${m}:${s}`;
         }
-
         window.updateDashboard = function() { 
             document.getElementById('statTasks').innerText = totalTasks; 
             document.getElementById('statMins').innerText = totalMins + 'm'; 
@@ -258,7 +264,6 @@
             "Do it for the 'I told you so'.",
             "My code 'works' and I have no idea why. Just accept the blessing and move on to the next task."
         ];
-
         window.generateMotivation = function() {
             const randomIndex = Math.floor(Math.random() * motivations.length);
             const textElement = document.getElementById('motivationText');
@@ -268,19 +273,15 @@
         window.generateMotivation(); 
 
         // ==========================================
-        // AUTHENTICATION LOGIC
+        // AUTHENTICATION
         // ==========================================
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Nakalogin! Ipakita ang app.
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'flex';
-                console.log("Welcome,", user.displayName);
-                
-                // SISIMULAN LANG BASAHIN ANG DATABASE PAG NAKA-LOGIN NA
-                startDatabaseListeners();
+                console.log("Logged in as:", user.displayName);
+                startDatabaseListeners(); // Start fetching data ONLY when logged in
             } else {
-                // Walang nakalogin. Ipakita ang login screen.
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('mainApp').style.display = 'none';
             }
@@ -295,107 +296,106 @@
         };
 
         // ==========================================
-        // DATABASE LISTENERS (Wrapped in a function)
+        // ROBUST DATABASE LISTENERS
         // ==========================================
         function startDatabaseListeners() {
-            if (listenersStarted) return; // Wag uulitin pag naka-start na
+            if (listenersStarted) return; 
             listenersStarted = true;
+            console.log("Attaching database listeners...");
 
-            // 1. HABITS LISTENER
-            onSnapshot(collection(db, "habits"), (snapshot) => {
-                const list = document.getElementById('fixedList');
-                list.innerHTML = '';
-                snapshot.forEach((document) => {
-                    const data = document.data(); const id = document.id;
-                    let timeBadge = data.time ? `<span class="badge badge-habit-time">⏰ ${formatAmPm(data.time)}</span>` : '';
-                    const li = document.createElement('li');
-                    li.style.flexDirection = 'row'; li.style.alignItems = 'center'; li.style.justifyContent = 'space-between'; li.style.padding = '14px 18px';
-                    li.innerHTML = `
-                        <label class="checkbox-item" style="flex: 1;">
-                            <input type="checkbox" ${data.completed ? 'checked' : ''} onclick="toggleHabit('${id}', this.checked)"> 
-                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <span class="${data.completed ? 'completed' : ''}">${data.task}</span>${timeBadge}
-                            </div>
-                        </label>
-                        <button class="delete-btn" onclick="deleteFromDB('habits', '${id}')">×</button>
-                    `;
-                    list.appendChild(li);
-                });
-            });
-
-            // 2. PROTECTED BLOCKS LISTENER
-            onSnapshot(collection(db, "blocks"), (snapshot) => {
-                const list = document.getElementById('blockList');
-                list.innerHTML = ''; blockedDatesArray = []; 
-                snapshot.forEach((document) => {
-                    const data = document.data(); const id = document.id;
-                    blockedDatesArray.push(data); 
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <div class="task-header">
-                            <div>
-                                <div class="task-title" style="color: var(--danger);">🔒 ${data.reason}</div>
-                                <div class="task-badges"><span class="badge" style="background: #fee2e2; color: #991b1b;">🗓️ ${formatDateReadable(data.date)}</span></div>
-                            </div>
-                            <button class="delete-btn" onclick="deleteFromDB('blocks', '${id}')">×</button>
-                        </div>
-                    `;
-                    list.appendChild(li);
-                });
-            });
-
-            // 3. MASTER TASKS & DASHBOARD LISTENER
-            onSnapshot(collection(db, "tasks"), (snapshot) => {
-                const list = document.getElementById('schedList');
-                totalTasks = 0; totalMins = 0; 
-
-                snapshot.docChanges().forEach((change) => {
-                    const data = change.doc.data(); const id = change.doc.id;
-                    const existingLi = document.getElementById(`task-${id}`);
-
-                    if (change.type === "added" && data.status === 'pending') {
-                        let dateBadge = data.targetDate ? `<span class="badge badge-date">🗓️ ${formatDateReadable(data.targetDate)}</span>` : `<span class="badge badge-date">🗓️ Today</span>`;
-                        let estString = data.estMins > 0 ? `<span class="badge badge-est">⏱️ Est: ${data.estMins}m</span>` : '';
-                        let catClass = data.category === 'School' ? 'cat-school' : (data.category === 'Work' ? 'cat-work' : 'cat-personal');
-                        let catEmoji = data.category === 'School' ? '🎓' : (data.category === 'Work' ? '💼' : '🌱');
-                        let catBadge = `<span class="badge ${catClass}">${catEmoji} ${data.category}</span>`;
-
+            try {
+                // 1. HABITS LISTENER
+                onSnapshot(collection(db, "habits"), (snapshot) => {
+                    const list = document.getElementById('fixedList');
+                    list.innerHTML = '';
+                    snapshot.forEach((docSnap) => {
+                        const data = docSnap.data(); const id = docSnap.id;
+                        let timeBadge = data.time ? `<span class="badge badge-habit-time">⏰ ${formatAmPm(data.time)}</span>` : '';
                         const li = document.createElement('li');
-                        li.id = `task-${id}`; li.dataset.id = id; li.dataset.estMins = data.estMins; li.dataset.taskName = data.taskName; li.dataset.secondsElapsed = 0;
-
+                        li.style.flexDirection = 'row'; li.style.alignItems = 'center'; li.style.justifyContent = 'space-between'; li.style.padding = '14px 18px';
                         li.innerHTML = `
-                            <div class="task-header"><div><div class="task-title">${data.taskName}</div><div class="task-badges">${catBadge} ${dateBadge} ${estString}</div></div><button class="delete-btn" onclick="deleteFromDB('tasks', '${id}')">×</button></div>
-                            <div class="timer-section"><div class="timer-display">00:00:00</div>
-                                <div class="timer-btns">
-                                    <button class="icon-btn play-btn" onclick="startTimer(this)">▶️ Play</button>
-                                    <button class="icon-btn pause-btn" onclick="pauseTimer(this)" style="display:none;">⏸️ Pause</button>
-                                    <button class="icon-btn stop-btn" onclick="stopTimer(this)">⏹️ Stop</button>
-                                    <button class="icon-btn done-btn" onclick="markDone(this)">✅ Done</button>
+                            <label class="checkbox-item" style="flex: 1;">
+                                <input type="checkbox" ${data.completed ? 'checked' : ''} onclick="toggleHabit('${id}', this.checked)"> 
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span class="${data.completed ? 'completed' : ''}">${data.task || 'Habit'}</span>${timeBadge}
                                 </div>
+                            </label>
+                            <button class="delete-btn" onclick="deleteFromDB('habits', '${id}')">×</button>
+                        `;
+                        list.appendChild(li);
+                    });
+                }, (error) => console.error("Habits Error:", error));
+
+                // 2. PROTECTED BLOCKS LISTENER
+                onSnapshot(collection(db, "blocks"), (snapshot) => {
+                    const list = document.getElementById('blockList');
+                    list.innerHTML = ''; blockedDatesArray = []; 
+                    snapshot.forEach((docSnap) => {
+                        const data = docSnap.data(); const id = docSnap.id;
+                        blockedDatesArray.push(data); 
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <div class="task-header">
+                                <div>
+                                    <div class="task-title" style="color: var(--danger);">🔒 ${data.reason || 'Blocked'}</div>
+                                    <div class="task-badges"><span class="badge" style="background: #fee2e2; color: #991b1b;">🗓️ ${formatDateReadable(data.date)}</span></div>
+                                </div>
+                                <button class="delete-btn" onclick="deleteFromDB('blocks', '${id}')">×</button>
                             </div>
                         `;
                         list.appendChild(li);
-                    }
-                    if (change.type === "modified" && data.status === 'done' && existingLi) { existingLi.remove(); }
-                    if (change.type === "removed" && existingLi) { existingLi.remove(); }
-                });
+                    });
+                }, (error) => console.error("Blocks Error:", error));
 
-                // Update Stats
-                snapshot.forEach((document) => {
-                    const data = document.data();
-                    if (data.status === 'done') {
-                        totalTasks++;
-                        totalMins += (data.actualMins || 0);
-                    }
-                });
-                updateDashboard();
-            });
-        } // End of startDatabaseListeners
+                // 3. MASTER TASKS & DASHBOARD LISTENER
+                onSnapshot(collection(db, "tasks"), (snapshot) => {
+                    const list = document.getElementById('schedList');
+                    list.innerHTML = ''; 
+                    totalTasks = 0; totalMins = 0; 
+
+                    snapshot.forEach((docSnap) => {
+                        const data = docSnap.data(); const id = docSnap.id;
+
+                        if (data.status !== 'done') {
+                            let dateBadge = data.targetDate ? `<span class="badge badge-date">🗓️ ${formatDateReadable(data.targetDate)}</span>` : `<span class="badge badge-date">🗓️ Today</span>`;
+                            let estString = data.estMins > 0 ? `<span class="badge badge-est">⏱️ Est: ${data.estMins}m</span>` : '';
+                            
+                            let cat = data.category || 'Personal';
+                            let catClass = cat === 'School' ? 'cat-school' : (cat === 'Work' ? 'cat-work' : 'cat-personal');
+                            let catEmoji = cat === 'School' ? '🎓' : (cat === 'Work' ? '💼' : '🌱');
+                            let catBadge = `<span class="badge ${catClass}">${catEmoji} ${cat}</span>`;
+
+                            const li = document.createElement('li');
+                            li.id = `task-${id}`; li.dataset.id = id; li.dataset.estMins = data.estMins || 0; li.dataset.taskName = data.taskName || 'Task'; li.dataset.secondsElapsed = 0;
+
+                            li.innerHTML = `
+                                <div class="task-header"><div><div class="task-title">${data.taskName || 'Task'}</div><div class="task-badges">${catBadge} ${dateBadge} ${estString}</div></div><button class="delete-btn" onclick="deleteFromDB('tasks', '${id}')">×</button></div>
+                                <div class="timer-section"><div class="timer-display">00:00:00</div>
+                                    <div class="timer-btns">
+                                        <button class="icon-btn play-btn" onclick="startTimer(this)">▶️ Play</button>
+                                        <button class="icon-btn pause-btn" onclick="pauseTimer(this)" style="display:none;">⏸️ Pause</button>
+                                        <button class="icon-btn stop-btn" onclick="stopTimer(this)">⏹️ Stop</button>
+                                        <button class="icon-btn done-btn" onclick="markDone(this)">✅ Done</button>
+                                    </div>
+                                </div>
+                            `;
+                            list.appendChild(li);
+                        } else {
+                            totalTasks++;
+                            totalMins += (data.actualMins || 0);
+                        }
+                    });
+                    updateDashboard();
+                }, (error) => console.error("Tasks Error:", error));
+
+            } catch (err) {
+                console.error("Critical error starting listeners:", err);
+            }
+        }
 
         // ==========================================
-        // APP ACTIONS (Writing to Firebase)
+        // WRITING TO FIREBASE
         // ==========================================
-
         window.deleteFromDB = async function(collectionName, id) { await deleteDoc(doc(db, collectionName, id)); }
 
         window.addHabit = async function() {
@@ -441,7 +441,7 @@
         }
 
         // ==========================================
-        // TIMER LOGIC & CLOUD SYNCING
+        // TIMER LOGIC
         // ==========================================
         window.startTimer = function(btn) {
             const li = btn.closest('li'); const display = li.querySelector('.timer-display');

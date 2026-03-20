@@ -94,6 +94,21 @@
 </head>
 <body>
 
+    <div id="loginScreen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%;">
+    <div class="panel" style="text-align: center; max-width: 350px;">
+        <h1 style="color: var(--primary); margin-bottom: 5px;">TimeFlow ✨</h1>
+        <p style="color: var(--text-muted); margin-bottom: 25px;">Please sign in to access your schedule.</p>
+        <button onclick="signInWithGoogle()" style="width: 100%; font-size: 16px; padding: 14px;">
+            🌐 Sign in with Google
+        </button>
+    </div>
+</div>
+
+<div id="mainApp" style="display: none; width: 100%; justify-content: center;">
+    <div class="app-container">
+        <button onclick="logOut()" style="background-color: var(--danger); margin-top: 20px;">🚪 Log Out</button>
+    </div>
+</div>
     <div class="app-container">
         
         <div class="app-header">
@@ -185,7 +200,9 @@
     <script type="module">
         // 1. IMPORT FIREBASE MODULAR SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+// BAGONG IMPORT PARA SA LOGIN:
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
         // 2. YOUR FIREBASE CONFIGURATION
         const firebaseConfig = {
@@ -198,9 +215,48 @@
             measurementId: "G-KHV8FLJCQL"
         };
 
+        const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
         // 3. INITIALIZE FIREBASE
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+
+        // LISTENER KUNG MAY NAKA-LOGIN O WALA
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // May naka-login! Ipakita ang app, itago ang login screen.
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'flex';
+        
+        // Optional: Pwede mong i-console.log para makita mo info mo
+        console.log("Welcome,", user.displayName);
+    } else {
+        // Walang naka-login. Ipakita ang login screen, itago ang app.
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('mainApp').style.display = 'none';
+    }
+});
+
+// FUNCTION PARA SA GOOGLE SIGN-IN BUTTON
+window.signInWithGoogle = function() {
+    signInWithPopup(auth, provider)
+        .then((result) => {
+            console.log("Successfully logged in!");
+        }).catch((error) => {
+            console.error("Error logging in:", error.message);
+            alert("Login failed: " + error.message);
+        });
+};
+
+// FUNCTION PARA SA LOGOUT BUTTON
+window.logOut = function() {
+    signOut(auth).then(() => {
+        console.log("Logged out successfully");
+    }).catch((error) => {
+        console.error("Logout error", error);
+    });
+};
 
         // ==========================================
         // GLOBAL VARIABLES & UTILS

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeFlow - AI Manager</title>
+    <style>
+        /* Modern Glassmorphism Variables */
+        :root {
+            --primary: #4f46e5; --primary-hover: #4338ca;
+            --success: #10b981; --success-hover: #059669;
+            --warning: #f59e0b; --danger: #ef4444;
+            --text-main: #1f2937; --text-muted: #6b7280;
+            --border: rgba(255, 255, 255, 0.4);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+        }
+
+        * { box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        
+        body { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); background-attachment: fixed; color: var(--text-main); display: flex; justify-content: center; padding: 20px 15px; margin: 0; min-height: 100vh; }
+        .app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 24px; padding-bottom: 60px; }
+        
+        .app-header { text-align: center; margin-bottom: -5px; }
+        .app-header h1 { margin: 0; font-size: 28px; color: #1e1b4b; font-weight: 800; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        .app-header p { margin: 5px 0 0; color: #3730a3; font-size: 14px; font-weight: 500;}
+
+        /* 🔥 Motivation Banner */
+        .motivation-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 16px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px; box-shadow: 0 4px 15px rgba(31, 38, 135, 0.05); }
+        .motivation-text { font-size: 14px; font-weight: 600; color: #4338ca; font-style: italic; line-height: 1.4; flex: 1; }
+        .refresh-btn { background: #e0e7ff; color: #4338ca; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; box-shadow: none; padding: 0;}
+        .refresh-btn:hover { background: #c7d2fe; transform: rotate(15deg); }
+
+        /* Glass Panels */
+        .panel { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 24px; border-radius: 24px; box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1); border: 1px solid var(--border); }
+        h3 { margin-top: 0; color: #312e81; display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; padding-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 16px; }
+
+        /* Dashboard Styles */
+        .stats-grid { display: flex; gap: 15px; }
+        .stat-card { background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 16px; padding: 16px; flex: 1; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .stat-value { font-size: 26px; font-weight: 800; color: var(--primary); }
+        .stat-label { font-size: 13px; color: var(--text-muted); font-weight: 600; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;}
+
+        /* Inputs & Selects */
+        .input-group, .input-group-wrap { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+        .full-width { width: 100%; } .half-width { flex: 1; min-width: 45%; } .third-width { flex: 1; min-width: 30%; }
+        input, select { padding: 12px 14px; border: 1.5px solid rgba(0,0,0,0.1); border-radius: 12px; font-size: 14px; flex: 1; transition: all 0.2s; background: rgba(255,255,255,0.9); color: var(--text-main); }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        
+        button { padding: 12px 16px; background-color: var(--primary); color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2); }
+        button:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3); }
+        button:active { transform: translateY(0); } button:disabled { background-color: #9ca3af; cursor: not-allowed; box-shadow: none; transform: none;}
+
+        /* Lists */
+        ul { list-style-type: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+        li { background: #ffffff; padding: 18px; border-radius: 16px; display: flex; flex-direction: column; gap: 12px; border: 1px solid rgba(0,0,0,0.03); box-shadow: 0 2px 8px rgba(0,0,0,0.02); animation: slideUp 0.3s ease-out; position: relative; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .task-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .task-title { font-weight: 700; font-size: 15px; line-height: 1.4; color: #1e1b4b; }
+        .task-badges { display: flex; gap: 6px; font-size: 12px; margin-top: 8px; flex-wrap: wrap; }
+        .badge { padding: 4px 10px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;}
+        
+        .badge-date { background: #f1f5f9; color: #475569; } .badge-est { background: #fef3c7; color: #b45309; } .badge-habit-time { background: #e0f2fe; color: #0369a1; }
+        .cat-school { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .cat-work { background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+        .cat-personal { background: #dcfce3; color: #166534; border: 1px solid #bbf7d0; }
+
+        .checkbox-item { display: flex; align-items: center; gap: 12px; width: 100%; cursor: pointer; font-size: 15px; font-weight: 600;}
+        input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer; }
+        .completed { text-decoration: line-through; color: var(--text-muted); opacity: 0.7;}
+
+        /* Timer UI */
+        .timer-section { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px;}
+        .timer-display { font-family: 'Courier New', monospace; font-size: 20px; font-weight: 800; color: var(--primary); letter-spacing: 1px;}
+        .timer-btns { display: flex; gap: 8px; flex-wrap: wrap;}
+        .icon-btn { padding: 8px 12px; border-radius: 8px; font-size: 13px; box-shadow: none; display: flex; align-items: center; gap: 4px;}
+        .icon-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .play-btn { background: #3b82f6; } .play-btn:hover { background: #2563eb; }
+        .pause-btn { background: var(--warning); color: white; } .pause-btn:hover { background: #d97706; }
+        .stop-btn { background: var(--danger); } .stop-btn:hover { background: #dc2626; }
+        .done-btn { background: var(--success); } .done-btn:hover { background: var(--success-hover); }
+
+        .delete-btn { background: none; color: #9ca3af; padding: 4px; font-size: 20px; line-height: 1; border-radius: 50%; width: 30px; height: 30px; box-shadow: none;}
+        .delete-btn:hover { background: #fee2e2; color: var(--danger); transform: none;}
+
+        /* Modal */
+        #aiModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.6); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; padding: 20px;}
+        .modal-content { background: white; padding: 32px; border-radius: 24px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-content h2 { margin-top: 0; color: var(--primary); font-size: 24px; font-weight: 800;}
+        .modal-content p { color: var(--text-main); line-height: 1.6; font-size: 15px;}
+        .modal-btn { width: 100%; margin-top: 24px; padding: 14px; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div class="app-header">
+            <h1>TimeFlow ✨</h1>
+            <p>Your AI-Powered Study & Schedule Tracker</p>
+        </div>
+
+        <div class="motivation-card">
+            <span class="motivation-text" id="motivationText">"Loading your daily fuel..."</span>
+            <button class="refresh-btn" onclick="generateMotivation()" title="Get new motivation">↻</button>
+        </div>
+
+        <div class="panel">
+            <h3>📊 Progress Dashboard</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="statTasks">0</div>
+                    <div class="stat-label">Tasks Done</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statMins">0m</div>
+                    <div class="stat-label">Focus Time</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>🛡️ Protected Time Blocks</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: -5px; margin-bottom: 15px; line-height: 1.4;">Set non-negotiable dates. The AI will refuse to schedule tasks here.</p>
+            <div class="input-group-wrap">
+                <input type="text" id="blockReason" class="full-width" placeholder="Ex: Date with Kat, Rest Day...">
+                <input type="date" id="blockDate" class="half-width">
+                <button class="half-width" style="background-color: var(--danger);" onclick="addBlockedDate()">🔒 Lock Date</button>
+            </div>
+            <ul id="blockList"></ul>
+        </div>
+
+        <div class="panel">
+            <h3>✅ Daily Habits</h3>
+            <div class="input-group-wrap">
+                <input type="text" id="fixedInput" class="full-width" placeholder="Ex: Daily review set">
+                <input type="time" id="fixedTime" class="half-width" title="Time (Optional)">
+                <button class="half-width" onclick="addHabit()">Add Habit</button>
+            </div>
+            <ul id="fixedList"></ul>
+        </div>
+
+        <div class="panel">
+            <h3>🤖 AI Task Estimator</h3>
+            <div class="input-group-wrap">
+                <input type="text" id="aiInput" class="full-width" placeholder="Ex: Review Math formulas">
+                <select id="aiCategory" class="third-width">
+                    <option value="School">🎓 School</option>
+                    <option value="Work">💼 Work</option>
+                    <option value="Personal">🌱 Personal</option>
+                </select>
+                <input type="date" id="aiDate" class="third-width" title="Target Date">
+                <button id="aiBtn" class="third-width" onclick="computeAITask()">✨ Estimate</button>
+            </div>
+            <p id="aiStatus" style="font-size: 13px; color: var(--primary); margin-top: -5px; display: none; font-weight: 700; text-align: center;">⏳ AI is analyzing task...</p>
+        </div>
+
+        <div class="panel">
+            <h3>📅 Schedule & Deadlines</h3>
+            <div class="input-group-wrap">
+                <input type="text" id="schedInput" class="full-width" placeholder="Ex: Finish website logic">
+                <select id="schedCategory" class="third-width">
+                    <option value="School">🎓 School</option>
+                    <option value="Work">💼 Work</option>
+                    <option value="Personal">🌱 Personal</option>
+                </select>
+                <input type="date" id="schedDate" class="third-width" title="Target Date">
+                <input type="number" id="schedEst" class="third-width" placeholder="Est. Mins">
+                <button class="full-width" onclick="addMasterTask()">Add Manual Task</button>
+            </div>
+            <ul id="schedList"></ul>
+        </div>
+
+    </div>
+
+    <div id="aiModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">🤖 Performance Review</h2>
+            <div id="aiAnalysisText"></div>
+            <button class="modal-btn" onclick="closeModal()">Got it, thanks!</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // 1. IMPORT FIREBASE MODULAR SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // 2. YOUR FIREBASE CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyBLPScss8qg8RjhAHaNJQBO8AuiavNs3o4",
+            authDomain: "timeflow-web-a03ae.firebaseapp.com",
+            projectId: "timeflow-web-a03ae",
+            storageBucket: "timeflow-web-a03ae.firebasestorage.app",
+            messagingSenderId: "853455777556",
+            appId: "1:853455777556:web:b3ba0f5b318035609adc01",
+            measurementId: "G-KHV8FLJCQL"
+        };
+
+        // 3. INITIALIZE FIREBASE
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // ==========================================
+        // GLOBAL VARIABLES & UTILS
+        // ==========================================
+        let blockedDatesArray = [];
+        
+        function formatAmPm(timeStr) { let [h, m] = timeStr.split(':'); let ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:${m} ${ampm}`; }
+        function formatDateReadable(dateStr) { if(!dateStr) return 'Today'; return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+        function formatTime(totalSeconds) {
+            const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+            const s = String(totalSeconds % 60).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        // --- MOTIVATION ---
+        const motivations = [
+            "If at first you don't succeed, call it version 1.0.",
+            "Procrastination is just a side quest. Get back to the main storyline.",
+            "Control systems might be unstable, but you shouldn't be. Keep going!",
+            "You are an engineering student. You solve problems you didn't know existed in ways you don't understand.",
+            "Drink some water and act like you know what you're doing. It works 90% of the time.",
+            "Treat your board exam review like a Rubik's cube: one algorithm at a time until the whole thing makes sense.",
+            "I have not failed. I've just found 10,000 ways that won't compile.",
+            "Remember: The only difference between a bug and a feature is how confidently you present it.",
+            "Your future self is currently talking trash about your current self. Prove them wrong.",
+            "Rome wasn't built in a day, but they were laying bricks every hour. Go lay a brick.",
+            "Studying Math is like going to the gym for your brain. It hurts now, but you'll look really smart later.",
+            "Don't stop when you're tired. Stop when the code finally works without errors.",
+            "Even your coffee needs coffee right now. Drink up and get back to work.",
+            "Do it for the 'I told you so'.",
+            "My code 'works' and I have no idea why. Just accept the blessing and move on to the next task."
+        ];
+
+        window.generateMotivation = function() {
+            const randomIndex = Math.floor(Math.random() * motivations.length);
+            const textElement = document.getElementById('motivationText');
+            textElement.style.opacity = 0;
+            setTimeout(() => { textElement.innerText = `"${motivations[randomIndex]}"`; textElement.style.opacity = 1; textElement.style.transition = "opacity 0.3s ease-in-out"; }, 200);
+        }
+        window.generateMotivation(); // Call on load
+
+        // ==========================================
+        // REAL-TIME DATABASE LISTENERS
+        // ==========================================
+
+        // 1. HABITS LISTENER
+        onSnapshot(collection(db, "habits"), (snapshot) => {
+            const list = document.getElementById('fixedList');
+            list.innerHTML = '';
+            snapshot.forEach((document) => {
+                const data = document.data();
+                const id = document.id;
+                let timeBadge = data.time ? `<span class="badge badge-habit-time">⏰ ${formatAmPm(data.time)}</span>` : '';
+                const li = document.createElement('li');
+                li.style.flexDirection = 'row'; li.style.alignItems = 'center'; li.style.justifyContent = 'space-between'; li.style.padding = '14px 18px';
+                li.innerHTML = `
+                    <label class="checkbox-item" style="flex: 1;">
+                        <input type="checkbox" ${data.completed ? 'checked' : ''} onclick="toggleHabit('${id}', this.checked)"> 
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span class="${data.completed ? 'completed' : ''}">${data.task}</span>${timeBadge}
+                        </div>
+                    </label>
+                    <button class="delete-btn" onclick="deleteFromDB('habits', '${id}')">×</button>
+                `;
+                list.appendChild(li);
+            });
+        });
+
+        // 2. PROTECTED BLOCKS LISTENER
+        onSnapshot(collection(db, "blocks"), (snapshot) => {
+            const list = document.getElementById('blockList');
+            list.innerHTML = '';
+            blockedDatesArray = []; // Reset local array
+            
+            snapshot.forEach((document) => {
+                const data = document.data();
+                const id = document.id;
+                blockedDatesArray.push(data); // Add to local check
+                
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="task-header">
+                        <div>
+                            <div class="task-title" style="color: var(--danger);">🔒 ${data.reason}</div>
+                            <div class="task-badges"><span class="badge" style="background: #fee2e2; color: #991b1b;">🗓️ ${formatDateReadable(data.date)}</span></div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteFromDB('blocks', '${id}')">×</button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        });
+
+        // 3. MASTER TASKS & DASHBOARD LISTENER
+        onSnapshot(collection(db, "tasks"), (snapshot) => {
+            const list = document.getElementById('schedList');
+            let tTasks = 0; let tMins = 0;
+
+            // Intelligent DOM updating so running timers don't get destroyed
+            snapshot.docChanges().forEach((change) => {
+                const data = change.doc.data();
+                const id = change.doc.id;
+                const existingLi = document.getElementById(`task-${id}`);
+
+                if (change.type === "added" && data.status === 'pending') {
+                    let dateBadge = data.targetDate ? `<span class="badge badge-date">🗓️ ${formatDateReadable(data.targetDate)}</span>` : `<span class="badge badge-date">🗓️ Today</span>`;
+                    let estString = data.estMins > 0 ? `<span class="badge badge-est">⏱️ Est: ${data.estMins}m</span>` : '';
+                    let catClass = data.category === 'School' ? 'cat-school' : (data.category === 'Work' ? 'cat-work' : 'cat-personal');
+                    let catEmoji = data.category === 'School' ? '🎓' : (data.category === 'Work' ? '💼' : '🌱');
+                    let catBadge = `<span class="badge ${catClass}">${catEmoji} ${data.category}</span>`;
+
+                    const li = document.createElement('li');
+                    li.id = `task-${id}`; // Lagyan ng ID para madaling hanapin
+                    li.dataset.id = id; li.dataset.estMins = data.estMins; li.dataset.taskName = data.taskName; li.dataset.secondsElapsed = 0;
+
+                    li.innerHTML = `
+                        <div class="task-header"><div><div class="task-title">${data.taskName}</div><div class="task-badges">${catBadge} ${dateBadge} ${estString}</div></div><button class="delete-btn" onclick="deleteFromDB('tasks', '${id}')">×</button></div>
+                        <div class="timer-section"><div class="timer-display">00:00:00</div>
+                            <div class="timer-btns">
+                                <button class="icon-btn play-btn" onclick="startTimer(this)">▶️ Play</button>
+                                <button class="icon-btn pause-btn" onclick="pauseTimer(this)" style="display:none;">⏸️ Pause</button>
+                                <button class="icon-btn stop-btn" onclick="stopTimer(this)">⏹️ Stop</button>
+                                <button class="icon-btn done-btn" onclick="markDone(this)">✅ Done</button>
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(li);
+                }
+                
+                if (change.type === "modified" && data.status === 'done' && existingLi) {
+                    existingLi.remove(); // Remove from pending list
+                }
+
+                if (change.type === "removed" && existingLi) {
+                    existingLi.remove(); // Remove if deleted
+                }
+            });
+
+            // Update Dashboard Stats
+            snapshot.forEach((document) => {
+                const data = document.data();
+                if (data.status === 'done') {
+                    tTasks++;
+                    tMins += (data.actualMins || 0);
+                }
+            });
+            document.getElementById('statTasks').innerText = tTasks;
+            document.getElementById('statMins').innerText = tMins + 'm';
+        });
+
+        // ==========================================
+        // APP ACTIONS (Writing to Firebase)
+        // ==========================================
+
+        window.deleteFromDB = async function(collectionName, id) {
+            await deleteDoc(doc(db, collectionName, id));
+        }
+
+        window.addHabit = async function() {
+            const input = document.getElementById('fixedInput').value.trim();
+            const timeInput = document.getElementById('fixedTime').value;
+            if (!input) return;
+            await addDoc(collection(db, "habits"), { task: input, time: timeInput, completed: false });
+            document.getElementById('fixedInput').value = ''; document.getElementById('fixedTime').value = ''; 
+        }
+
+        window.toggleHabit = async function(id, isChecked) {
+            await updateDoc(doc(db, "habits", id), { completed: isChecked });
+        }
+
+        window.addBlockedDate = async function() {
+            const reason = document.getElementById('blockReason').value.trim();
+            const dateVal = document.getElementById('blockDate').value;
+            if (!reason || !dateVal) return;
+            await addDoc(collection(db, "blocks"), { reason: reason, date: dateVal });
+            document.getElementById('blockReason').value = ''; document.getElementById('blockDate').value = '';
+        }
+
+        window.addMasterTask = async function(taskName = '', targetDate = '', estMins = '', category = '') {
+            const task = taskName || document.getElementById('schedInput').value.trim();
+            const dateVal = targetDate || document.getElementById('schedDate').value;
+            const est = estMins || document.getElementById('schedEst').value || 0;
+            const cat = category || document.getElementById('schedCategory').value;
+
+            if (!task) return;
+            await addDoc(collection(db, "tasks"), {
+                taskName: task, targetDate: dateVal, estMins: parseInt(est), category: cat, status: 'pending', actualMins: 0
+            });
+            
+            document.getElementById('schedInput').value = ''; document.getElementById('schedDate').value = ''; document.getElementById('schedEst').value = '';
+        }
+
+        window.computeAITask = function() {
+            const input = document.getElementById('aiInput'); const dateInput = document.getElementById('aiDate'); const catInput = document.getElementById('aiCategory');
+            const btn = document.getElementById('aiBtn'); const status = document.getElementById('aiStatus');
+            
+            if (!input.value.trim() || !dateInput.value) { alert("Please enter a task and select a target date first!"); return; }
+
+            const isBlocked = blockedDatesArray.find(b => b.date === dateInput.value);
+            if (isBlocked) { alert(`🚨 Oops! You blocked this date for: ${isBlocked.reason}. The AI respects your boundaries. Please choose another date!`); return; }
+
+            btn.disabled = true; status.style.display = 'block';
+            setTimeout(() => { 
+                window.addMasterTask(`✨ ${input.value}`, dateInput.value, Math.floor(Math.random() * 105) + 15, catInput.value); 
+                input.value = ''; dateInput.value = ''; btn.disabled = false; status.style.display = 'none'; 
+            }, 1200); 
+        }
+
+        // ==========================================
+        // TIMER LOGIC & CLOUD SYNCING
+        // ==========================================
+
+        window.startTimer = function(btn) {
+            const li = btn.closest('li'); const display = li.querySelector('.timer-display');
+            btn.style.display = 'none'; li.querySelector('.pause-btn').style.display = 'inline-block';
+            li.timerInterval = setInterval(() => { let currentSecs = parseInt(li.dataset.secondsElapsed); currentSecs += 60; li.dataset.secondsElapsed = currentSecs; display.innerText = formatTime(currentSecs); }, 1000); 
+        }
+        
+        window.pauseTimer = function(btn) { const li = btn.closest('li'); clearInterval(li.timerInterval); btn.style.display = 'none'; li.querySelector('.play-btn').style.display = 'inline-block'; }
+        
+        window.stopTimer = async function(btn) { 
+            const li = btn.closest('li'); clearInterval(li.timerInterval); 
+            let actualMins = Math.floor(parseInt(li.dataset.secondsElapsed) / 60); 
+            
+            // I-save na as 'done' sa database
+            await updateDoc(doc(db, "tasks", li.dataset.id), { status: 'done', actualMins: actualMins });
+            analyzePerformance(li.dataset.taskName, parseInt(li.dataset.estMins), actualMins, false); 
+        }
+        
+        window.markDone = async function(btn) { 
+            const li = btn.closest('li'); clearInterval(li.timerInterval); 
+            let actualMins = Math.floor(parseInt(li.dataset.secondsElapsed) / 60); 
+            
+            // I-save na as 'done' sa database
+            await updateDoc(doc(db, "tasks", li.dataset.id), { status: 'done', actualMins: actualMins });
+            analyzePerformance(li.dataset.taskName, parseInt(li.dataset.estMins), actualMins, true); 
+        }
+
+        window.analyzePerformance = function(taskName, estMins, actualMins, isDirectDone) {
+            const textElement = document.getElementById('aiAnalysisText'); const titleElement = document.getElementById('modalTitle');
+            let html = `<div style="background: #f8fafc; padding: 16px; border-radius: 16px; margin-bottom: 20px; text-align: left; border: 1px solid #e2e8f0;"><div style="font-weight: 800; color: #1e1b4b; margin-bottom: 8px; font-size: 16px;">${taskName}</div>`;
+            
+            if (isDirectDone) {
+                titleElement.innerText = "🎉 Task Completed!"; html += `</div><p style="text-align: left;">Awesome! Na-mark mo na as done ang event/task na ito. Saved na 'to sa Cloud natin! ☁️🚀</p>`;
+            } else {
+                titleElement.innerText = "🤖 Performance Review"; html += `<div style="font-size: 15px; color: #475569;">Actual Time: <strong style="color: var(--primary);">${actualMins} mins</strong></div></div><p style="text-align: left;">`;
+                if (estMins > 0) {
+                    html += `<em style="color: #64748b; display: block; margin-bottom: 12px;">Target Estimate: ${estMins} mins</em>`; let diff = estMins - actualMins;
+                    if (actualMins === 0) html += "Wala pang isang minuto? Hindi mo yata pinindot yung play nang matagal! 😂 Pero saved na as done sa database.";
+                    else if (diff > 10) html += "🚀 <strong>Superb Focus!</strong> Natapos mo nang mas maaga kaysa sa expected time natin. Good job!";
+                    else if (Math.abs(diff) <= 10) html += "⏱️ <strong>Right on track.</strong> Sakto sa oras yung pacing mo at yung estimate natin.";
+                    else html += "💡 Medyo sumobra tayo sa inilaang oras. Normal lang 'yan lalo na kung mahirap na topic. Bawi next block!";
+                } else { html += "✅ Natapos mo rin! Wala tayong set na target time, pero ang mahalaga ay nai-track at pumasok sa Cloud records natin ang focus time mo."; }
+                html += `</p>`;
+            }
+            textElement.innerHTML = html; document.getElementById('aiModal').style.display = 'flex';
+        }
+        window.closeModal = function() { document.getElementById('aiModal').style.display = 'none'; }
+    </script>
+</body>
+</html>

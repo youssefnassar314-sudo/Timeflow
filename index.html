@@ -453,10 +453,16 @@ onSnapshot(collection(db, "habits"), (snapshot) => {
                             totalTasks++;
                             totalMins += (data.actualMins || 0);
                         }
+                    
                     });
                     updateDashboard();
                 }, (error) => console.error("Tasks Error:", error));
                 
+            } catch (error) {
+                console.error("Error starting listeners:", error);
+            }
+        } // <--- ADD THESE 4 LINES HERE
+
         // ==========================================
         // WRITING TO FIREBASE
         // ==========================================

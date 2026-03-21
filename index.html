@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TimeFlow - AI Manager</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
     <style>
         /* Modern Glassmorphism Variables */
         :root {
@@ -72,7 +72,7 @@
 
         /* Timer UI */
         .timer-section { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px;}
-        .timer-display { font-family: 'Courier New', monospace; font-size: 20px; font-weight: 800; color: var(--primary); letter-spacing: 1px;}
+        .timer-display { font-size: 14px; font-weight: 700; color: #475569; letter-spacing: 0.5px;}
         .timer-btns { display: flex; gap: 8px; flex-wrap: wrap;}
         .icon-btn { padding: 8px 12px; border-radius: 8px; font-size: 13px; box-shadow: none; display: flex; align-items: center; gap: 4px;}
         .icon-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -141,10 +141,6 @@
                     <div class="stat-card">
                         <div class="stat-value" id="statTasks">0</div>
                         <div class="stat-label">Tasks Done</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="statMins">0m</div>
-                        <div class="stat-label">Focus Time</div>
                     </div>
                 </div>
             </div>
@@ -231,9 +227,9 @@
     </div>
 
     <script type="module">
-        // 1. IMPORTS
+        // 1. IMPORTS - Added arrayUnion
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc, query, where, getDocs, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
         // 2. FIREBASE CONFIG
@@ -258,7 +254,6 @@
         // ==========================================
         let blockedDatesArray = [];
         let totalTasks = 0; 
-        let totalMins = 0;
         let listenersStarted = false; 
 
         function formatAmPm(timeStr) { 
@@ -269,15 +264,17 @@
             if(!dateStr) return 'Today'; 
             return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); 
         }
-        function formatTime(totalSeconds) {
-            const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-            const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-            const s = String(totalSeconds % 60).padStart(2, '0');
-            return `${h}:${m}:${s}`;
+        function getCurrentTimeAmPm() {
+            let now = new Date();
+            let h = now.getHours();
+            let m = now.getMinutes();
+            let ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            m = m < 10 ? '0' + m : m;
+            return `${h}:${m} ${ampm}`;
         }
         window.updateDashboard = function() { 
             document.getElementById('statTasks').innerText = totalTasks; 
-            document.getElementById('statMins').innerText = totalMins + 'm'; 
         }
 
         // --- MOTIVATION ---
@@ -314,7 +311,7 @@
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'flex';
                 console.log("Logged in as:", user.displayName);
-                startDatabaseListeners(); // Start fetching data ONLY when logged in
+                startDatabaseListeners(); 
             } else {
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('mainApp').style.display = 'none';
@@ -339,38 +336,34 @@
 
             try {
                 // 1. HABITS LISTENER
-                // 1. HABITS LISTENER
-onSnapshot(collection(db, "habits"), (snapshot) => {
-    const list = document.getElementById('fixedList');
-    list.innerHTML = '';
-    const today = new Date().toLocaleDateString(); // Kailangan natin ang date ngayon pang-compare
+                onSnapshot(collection(db, "habits"), (snapshot) => {
+                    const list = document.getElementById('fixedList');
+                    list.innerHTML = '';
+                    const today = new Date().toLocaleDateString();
 
-    snapshot.forEach((docSnap) => {
-        const data = docSnap.data(); const id = docSnap.id;
+                    snapshot.forEach((docSnap) => {
+                        const data = docSnap.data(); const id = docSnap.id;
 
-        // 🔥 AUTO-RESET LOGIC 🔥
-        // Kung completed siya pero hindi match sa date ngayon ang lastCompletedDate, i-uncheck natin!
-        if (data.completed && data.lastCompletedDate !== today) {
-            updateDoc(doc(db, "habits", id), { completed: false, lastCompletedDate: null });
-            return; // Skip sa pag-render dahil magti-trigger ulit yung onSnapshot pagka-update
-        }
+                        if (data.completed && data.lastCompletedDate !== today) {
+                            updateDoc(doc(db, "habits", id), { completed: false, lastCompletedDate: null });
+                            return; 
+                        }
 
-        // Yung original rendering code mo (walang binago dito)
-        let timeBadge = data.time ? `<span class="badge badge-habit-time">⏰ ${formatAmPm(data.time)}</span>` : '';
-        const li = document.createElement('li');
-        li.style.flexDirection = 'row'; li.style.alignItems = 'center'; li.style.justifyContent = 'space-between'; li.style.padding = '14px 18px';
-        li.innerHTML = `
-            <label class="checkbox-item" style="flex: 1;">
-                <input type="checkbox" ${data.completed ? 'checked' : ''} onclick="toggleHabit('${id}', this.checked)"> 
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span class="${data.completed ? 'completed' : ''}">${data.task || 'Habit'}</span>${timeBadge}
-                </div>
-            </label>
-            <button class="delete-btn" onclick="deleteFromDB('habits', '${id}')">×</button>
-        `;
-        list.appendChild(li);
-    });
-}, (error) => console.error("Habits Error:", error));
+                        let timeBadge = data.time ? `<span class="badge badge-habit-time">⏰ ${formatAmPm(data.time)}</span>` : '';
+                        const li = document.createElement('li');
+                        li.style.flexDirection = 'row'; li.style.alignItems = 'center'; li.style.justifyContent = 'space-between'; li.style.padding = '14px 18px';
+                        li.innerHTML = `
+                            <label class="checkbox-item" style="flex: 1;">
+                                <input type="checkbox" ${data.completed ? 'checked' : ''} onclick="toggleHabit('${id}', this.checked)"> 
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span class="${data.completed ? 'completed' : ''}">${data.task || 'Habit'}</span>${timeBadge}
+                                </div>
+                            </label>
+                            <button class="delete-btn" onclick="deleteFromDB('habits', '${id}')">×</button>
+                        `;
+                        list.appendChild(li);
+                    });
+                }, (error) => console.error("Habits Error:", error));
 
                 // 2. PROTECTED BLOCKS LISTENER
                 onSnapshot(collection(db, "blocks"), (snapshot) => {
@@ -393,11 +386,11 @@ onSnapshot(collection(db, "habits"), (snapshot) => {
                     });
                 }, (error) => console.error("Blocks Error:", error));
 
-                // 3. MASTER TASKS & DASHBOARD LISTENER
+                // 3. MASTER TASKS & DASHBOARD LISTENER (Updated for Logs)
                 onSnapshot(collection(db, "tasks"), (snapshot) => {
                     const list = document.getElementById('schedList');
                     list.innerHTML = ''; 
-                    totalTasks = 0; totalMins = 0; 
+                    totalTasks = 0; 
 
                     snapshot.forEach((docSnap) => {
                         const data = docSnap.data(); const id = docSnap.id;
@@ -411,49 +404,36 @@ onSnapshot(collection(db, "habits"), (snapshot) => {
                             let catEmoji = cat === 'School' ? '🎓' : (cat === 'Work' ? '💼' : '🌱');
                             let catBadge = `<span class="badge ${catClass}">${catEmoji} ${cat}</span>`;
 
-                            // 🔥 BACKGROUND TIMER LOGIC (Memory Check) 🔥
-                            let savedSecs = parseInt(localStorage.getItem('paused_' + id)) || 0;
-                            let activeStartTime = localStorage.getItem('timer_' + id);
-                            let isPlaying = false;
+                            // Log Logic Check
+                            let logs = data.logs || [];
+                            let lastLog = logs.length > 0 ? logs[logs.length - 1] : null;
+                            let isPlaying = lastLog && (lastLog.action === 'Started' || lastLog.action === 'Resumed');
+                            let hasLogsStr = logs.length > 0 ? 'true' : 'false';
                             
-                            // Kung may naka-save na start time, i-calculate kung ilang oras na lumipas
-                            if (activeStartTime) {
-                                savedSecs = Math.floor((Date.now() - parseInt(activeStartTime)) / 1000);
-                                isPlaying = true;
-                            }
+                            let displayStr = lastLog ? `📝 ${lastLog.action} at ${lastLog.time}` : "Ready to start logging";
 
                             const li = document.createElement('li');
-                            li.id = `task-${id}`; li.dataset.id = id; li.dataset.estMins = data.estMins || 0; li.dataset.taskName = data.taskName || 'Task'; 
-                            li.dataset.secondsElapsed = savedSecs;
+                            li.id = `task-${id}`; 
+                            li.dataset.id = id; 
+                            li.dataset.taskName = data.taskName || 'Task'; 
+                            li.dataset.hasLogs = hasLogsStr;
 
                             li.innerHTML = `
                                 <div class="task-header"><div><div class="task-title">${data.taskName || 'Task'}</div><div class="task-badges">${catBadge} ${dateBadge} ${estString}</div></div><button class="delete-btn" onclick="deleteFromDB('tasks', '${id}')">×</button></div>
-                                <div class="timer-section"><div class="timer-display">${formatTime(savedSecs)}</div>
+                                <div class="timer-section">
+                                    <div class="timer-display">${displayStr}</div>
                                     <div class="timer-btns">
                                         <button class="icon-btn play-btn" onclick="startTimer(this)" style="display: ${isPlaying ? 'none' : 'inline-block'};">▶️ Play</button>
                                         <button class="icon-btn pause-btn" onclick="pauseTimer(this)" style="display: ${isPlaying ? 'inline-block' : 'none'};">⏸️ Pause</button>
-                                        <button class="icon-btn stop-btn" onclick="stopTimer(this)">⏹️ Stop</button>
                                         <button class="icon-btn done-btn" onclick="markDone(this)">✅ Done</button>
                                     </div>
                                 </div>
                             `;
                             list.appendChild(li);
 
-                            // Kung naiwan siyang naka-play, paandarin ulit automatically!
-                            if (isPlaying) {
-                                let display = li.querySelector('.timer-display');
-                                li.timerInterval = setInterval(() => { 
-                                    let currentSecs = Math.floor((Date.now() - parseInt(activeStartTime)) / 1000);
-                                    li.dataset.secondsElapsed = currentSecs; 
-                                    display.innerText = formatTime(currentSecs); 
-                                }, 1000);
-                            }
-
                         } else {
                             totalTasks++;
-                            totalMins += (data.actualMins || 0);
                         }
-                    
                     });
                     updateDashboard();
                 }, (error) => console.error("Tasks Error:", error));
@@ -461,7 +441,7 @@ onSnapshot(collection(db, "habits"), (snapshot) => {
             } catch (error) {
                 console.error("Error starting listeners:", error);
             }
-        } // <--- ADD THESE 4 LINES HERE
+        } 
 
         // ==========================================
         // WRITING TO FIREBASE
@@ -476,12 +456,12 @@ onSnapshot(collection(db, "habits"), (snapshot) => {
         }
 
         window.toggleHabit = async function(id, isChecked) { 
-    const today = new Date().toLocaleDateString(); // Kunin ang date ngayon
-    await updateDoc(doc(db, "habits", id), { 
-        completed: isChecked,
-        lastCompletedDate: isChecked ? today : null // I-save ang petsa kung checked na
-    }); 
-}
+            const today = new Date().toLocaleDateString();
+            await updateDoc(doc(db, "habits", id), { 
+                completed: isChecked,
+                lastCompletedDate: isChecked ? today : null
+            }); 
+        }
 
         window.addBlockedDate = async function() {
             const reason = document.getElementById('blockReason').value.trim(); const dateVal = document.getElementById('blockDate').value;
@@ -497,7 +477,8 @@ onSnapshot(collection(db, "habits"), (snapshot) => {
             const cat = category || document.getElementById('schedCategory').value;
 
             if (!task) return;
-            await addDoc(collection(db, "tasks"), { taskName: task, targetDate: dateVal, estMins: parseInt(est), category: cat, status: 'pending', actualMins: 0 });
+            // Added logs: [] array sa object creation natin
+            await addDoc(collection(db, "tasks"), { taskName: task, targetDate: dateVal, estMins: parseInt(est), category: cat, status: 'pending', logs: [] });
             document.getElementById('schedInput').value = ''; document.getElementById('schedDate').value = ''; document.getElementById('schedEst').value = '';
         }
 
@@ -512,40 +493,35 @@ onSnapshot(collection(db, "habits"), (snapshot) => {
             const btn = document.getElementById('aiBtn'); 
             const status = document.getElementById('aiStatus');
             
-            // 1. Validation
             if (!titleInput || !dateInput) { 
                 alert("Please enter a Task Title and select a Target Date!"); 
                 return; 
             }
 
-            // 2. Check for Non-Negotiable Blocked Dates
             const isBlocked = blockedDatesArray.find(b => b.date === dateInput);
             if (isBlocked) { 
                 alert(`🚨 Oops! You blocked this date for: ${isBlocked.reason}. The AI respects your boundaries. Please choose another date!`); 
                 return; 
             }
 
-            // UI Loading State
             btn.disabled = true; 
             status.style.display = 'block';
             status.innerText = "⏳ Gemini AI is calculating...";
 
-            // 3. KUNIN ANG KEY SA BROWSER MEMORY
-let GEMINI_API_KEY = localStorage.getItem("timeflow_gemini_key");
+            let GEMINI_API_KEY = localStorage.getItem("timeflow_gemini_key");
 
-if (!GEMINI_API_KEY) {
-    GEMINI_API_KEY = prompt("🔐 Enter your Gemini API Key to use the AI Estimator:");
-    if (GEMINI_API_KEY) {
-        localStorage.setItem("timeflow_gemini_key", GEMINI_API_KEY.trim());
-    } else {
-        alert("Kailangan ng API Key para gumana ang AI, bes!");
-        btn.disabled = false;
-        status.style.display = 'none';
-        return;
-    }
-}
-            // 4. ANG INSTRUCTION (PROMPT) NATIN KAY GEMINI
-            // Mapapansin mo, nilagyan ko ng context na ECE student ka para mas accurate ang computation niya sa Math/Engineering subjects!
+            if (!GEMINI_API_KEY) {
+                GEMINI_API_KEY = prompt("🔐 Enter your Gemini API Key to use the AI Estimator:");
+                if (GEMINI_API_KEY) {
+                    localStorage.setItem("timeflow_gemini_key", GEMINI_API_KEY.trim());
+                } else {
+                    alert("Kailangan ng API Key para gumana ang AI, bes!");
+                    btn.disabled = false;
+                    status.style.display = 'none';
+                    return;
+                }
+            }
+            
             const promptText = `
                 You are a productivity AI assistant for an Engineering (ECE) student reviewing for board exams and doing web development work.
                 Estimate how many minutes it will conservatively take to complete the following task.
@@ -557,7 +533,6 @@ if (!GEMINI_API_KEY) {
             `;
 
             try {
-                // 5. I-send ang request kay Gemini via REST API
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -570,16 +545,13 @@ if (!GEMINI_API_KEY) {
                 
                 if (!response.ok) throw new Error(data.error?.message || "API Request Failed");
 
-                // 6. Kunin ang sagot at i-convert sa number
                 const aiEstimateText = data.candidates[0].content.parts[0].text.trim();
                 const estMins = parseInt(aiEstimateText);
 
                 if (isNaN(estMins)) throw new Error("AI did not return a valid number format.");
 
-                // 7. I-save sa Firebase (Master Task List)
                 window.addMasterTask(`✨ ${titleInput}`, dateInput, estMins, catInput); 
                 
-                // 8. Linisin ang mga text boxes
                 document.getElementById('aiTitle').value = ''; 
                 document.getElementById('aiDetails').value = ''; 
                 document.getElementById('aiDate').value = ''; 
@@ -588,84 +560,48 @@ if (!GEMINI_API_KEY) {
                 console.error("Gemini Error:", error);
                 alert("AI failed to estimate. Error: " + error.message + "\n\n(Did you paste your API key in the code?)");
             } finally {
-                // Ibalik sa normal ang button
                 btn.disabled = false; 
                 status.style.display = 'none'; 
             }
         }
 
         // ==========================================
-        // TIMER LOGIC (BACKGROUND SUPPORTED)
+        // LOGGING LOGIC (Replacing Stopwatches)
         // ==========================================
-        window.startTimer = function(btn) {
-            const li = btn.closest('li'); const display = li.querySelector('.timer-display');
-            btn.style.display = 'none'; li.querySelector('.pause-btn').style.display = 'inline-block';
+        window.startTimer = async function(btn) {
+            const li = btn.closest('li');
+            const id = li.dataset.id;
+            const actionStr = li.dataset.hasLogs === 'true' ? 'Resumed' : 'Started';
             
-            // I-save ang exact time na nag-play sa memory ng laptop/phone
-            let startTime = Date.now() - (parseInt(li.dataset.secondsElapsed) * 1000);
-            localStorage.setItem('timer_' + li.dataset.id, startTime);
-            localStorage.removeItem('paused_' + li.dataset.id);
-
-            li.timerInterval = setInterval(() => { 
-                let currentSecs = Math.floor((Date.now() - startTime) / 1000);
-                li.dataset.secondsElapsed = currentSecs; 
-                display.innerText = formatTime(currentSecs); 
-            }, 1000); 
-        }
-
-        window.pauseTimer = function(btn) { 
-            const li = btn.closest('li'); clearInterval(li.timerInterval); 
-            btn.style.display = 'none'; li.querySelector('.play-btn').style.display = 'inline-block'; 
-            
-            // I-save ang naipong oras pagka-pause
-            localStorage.removeItem('timer_' + li.dataset.id);
-            localStorage.setItem('paused_' + li.dataset.id, li.dataset.secondsElapsed);
-        }
-
-        window.stopTimer = async function(btn) { 
-            const li = btn.closest('li'); clearInterval(li.timerInterval); 
-            
-            // Linisin ang memory
-            localStorage.removeItem('timer_' + li.dataset.id);
-            localStorage.removeItem('paused_' + li.dataset.id);
-
-            let actualSecs = parseInt(li.dataset.secondsElapsed);
-            let actualMins = Math.floor(actualSecs / 60); 
-            
-            let endTime = new Date();
-            let startTime = new Date(endTime.getTime() - (actualSecs * 1000));
-            let dateKey = endTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-            let timeSpan = `${formatAmPm(startTime.toTimeString().slice(0,5))} - ${formatAmPm(endTime.toTimeString().slice(0,5))}`;
-
-            await updateDoc(doc(db, "tasks", li.dataset.id), { 
-                status: 'done', actualMins: actualMins, dateCompleted: dateKey, timeSpan: timeSpan 
+            await updateDoc(doc(db, "tasks", id), { 
+                logs: arrayUnion({ action: actionStr, time: getCurrentTimeAmPm(), timestamp: Date.now() }) 
             });
-            analyzePerformance(li.dataset.taskName, parseInt(li.dataset.estMins), actualMins, false); 
+        }
+
+        window.pauseTimer = async function(btn) { 
+            const li = btn.closest('li');
+            const id = li.dataset.id;
+
+            await updateDoc(doc(db, "tasks", id), { 
+                logs: arrayUnion({ action: 'Paused', time: getCurrentTimeAmPm(), timestamp: Date.now() }) 
+            });
         }
         
         window.markDone = async function(btn) { 
-            const li = btn.closest('li'); clearInterval(li.timerInterval); 
-            
-            // Linisin ang memory
-            localStorage.removeItem('timer_' + li.dataset.id);
-            localStorage.removeItem('paused_' + li.dataset.id);
+            const li = btn.closest('li');
+            const id = li.dataset.id;
+            let dateKey = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-            let actualSecs = parseInt(li.dataset.secondsElapsed);
-            let actualMins = Math.floor(actualSecs / 60); 
-            
-            let endTime = new Date();
-            let startTime = new Date(endTime.getTime() - (actualSecs * 1000));
-            let dateKey = endTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-            let timeSpan = `${formatAmPm(startTime.toTimeString().slice(0,5))} - ${formatAmPm(endTime.toTimeString().slice(0,5))}`;
-
-            await updateDoc(doc(db, "tasks", li.dataset.id), { 
-                status: 'done', actualMins: actualMins, dateCompleted: dateKey, timeSpan: timeSpan 
+            await updateDoc(doc(db, "tasks", id), { 
+                status: 'done', 
+                dateCompleted: dateKey,
+                logs: arrayUnion({ action: 'Done', time: getCurrentTimeAmPm(), timestamp: Date.now() }) 
             });
-            analyzePerformance(li.dataset.taskName, parseInt(li.dataset.estMins), actualMins, true); 
+            analyzePerformance(li.dataset.taskName); 
         }
 
         // ==========================================
-        // RECEIPTS PAGE LOGIC
+        // RECEIPTS PAGE LOGIC (Updated to show Logs)
         // ==========================================
         window.openReceipts = async function() {
             document.getElementById('mainApp').style.display = 'none';
@@ -674,7 +610,6 @@ if (!GEMINI_API_KEY) {
             const container = document.getElementById('receiptContainer');
             container.innerHTML = '<p style="color: #312e81; font-weight: bold; text-align: center;">Loading your receipts... ⏳</p>';
             
-            // Hanapin lahat ng "done" tasks
             const q = query(collection(db, "tasks"), where("status", "==", "done"));
             const snapshot = await getDocs(q);
             
@@ -682,13 +617,12 @@ if (!GEMINI_API_KEY) {
             
             snapshot.forEach(docSnap => {
                 let data = docSnap.data();
-                data.id = docSnap.id; // 🔥 KINUHA NATIN ANG ID DITO PARA MABURA MAMAYA
+                data.id = docSnap.id; 
                 
                 let dateKey = data.dateCompleted || "Uncategorized Date";
-                if(!tasksByDate[dateKey]) tasksByDate[dateKey] = { tasks: [], totalMins: 0 };
+                if(!tasksByDate[dateKey]) tasksByDate[dateKey] = { tasks: [] };
                 
                 tasksByDate[dateKey].tasks.push(data);
-                tasksByDate[dateKey].totalMins += (data.actualMins || 0);
             });
             
             container.innerHTML = '';
@@ -698,7 +632,6 @@ if (!GEMINI_API_KEY) {
                 return;
             }
             
-            // I-render ang mga resibo
             for (const [date, info] of Object.entries(tasksByDate)) {
                 let html = `
                     <div class="receipt">
@@ -708,14 +641,21 @@ if (!GEMINI_API_KEY) {
                 `;
                 
                 info.tasks.forEach(t => {
-                    let timeText = t.timeSpan ? t.timeSpan : '--:--';
+                    // Generate list of logs
+                    let logHtml = t.logs && t.logs.length > 0 
+                        ? t.logs.map(l => `<div style="font-size: 13px; color: #555; display: flex; justify-content: space-between; margin-bottom: 2px;"><span>- ${l.action}</span> <span>${l.time}</span></div>`).join('') 
+                        : '<div style="font-size: 13px; color: #555;">No time logs recorded</div>';
+
                     html += `
-                        <div class="receipt-row" style="align-items: center;">
-                            <span class="receipt-task">1x ${t.taskName}</span>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span class="receipt-time">${timeText}<br><small>${t.actualMins} mins</small></span>
+                        <div class="receipt-row" style="flex-direction: column; gap: 8px; margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; font-weight: 800;">
+                                <span class="receipt-task">${t.taskName}</span>
                                 <button class="delete-btn" style="width: 24px; height: 24px; font-size: 16px; padding: 0;" onclick="deleteReceiptItem('${t.id}')" title="Delete this record">×</button>
                             </div>
+                            <div style="padding-left: 10px; border-left: 2px dashed #ccc;">
+                                ${logHtml}
+                            </div>
+                            <div style="text-align: right; color: #10b981; font-weight: 800; font-size: 12px; margin-top: 5px;">STATUS: DONE ✅</div>
                         </div>
                     `;
                 });
@@ -723,8 +663,8 @@ if (!GEMINI_API_KEY) {
                 html += `
                         <div class="receipt-divider"></div>
                         <div class="receipt-row receipt-total">
-                            <span>TOTAL FOCUS</span>
-                            <span>${info.totalMins} MINS</span>
+                            <span>TOTAL TASKS</span>
+                            <span>${info.tasks.length}</span>
                         </div>
                         <div class="receipt-divider"></div>
                         <div class="receipt-footer">THANK YOU</div>
@@ -739,32 +679,21 @@ if (!GEMINI_API_KEY) {
             document.getElementById('mainApp').style.display = 'flex';
         }
     
-        window.analyzePerformance = function(taskName, estMins, actualMins, isDirectDone) {
+        window.analyzePerformance = function(taskName) {
             const textElement = document.getElementById('aiAnalysisText'); const titleElement = document.getElementById('modalTitle');
             let html = `<div style="background: #f8fafc; padding: 16px; border-radius: 16px; margin-bottom: 20px; text-align: left; border: 1px solid #e2e8f0;"><div style="font-weight: 800; color: #1e1b4b; margin-bottom: 8px; font-size: 16px;">${taskName}</div>`;
             
-            if (isDirectDone) {
-                titleElement.innerText = "🎉 Task Completed!"; html += `</div><p style="text-align: left;">Awesome! Na-mark mo na as done ang event/task na ito. Saved na 'to sa Cloud natin! ☁️🚀</p>`;
-            } else {
-                titleElement.innerText = "🤖 Performance Review"; html += `<div style="font-size: 15px; color: #475569;">Actual Time: <strong style="color: var(--primary);">${actualMins} mins</strong></div></div><p style="text-align: left;">`;
-                if (estMins > 0) {
-                    html += `<em style="color: #64748b; display: block; margin-bottom: 12px;">Target Estimate: ${estMins} mins</em>`; let diff = estMins - actualMins;
-                    if (actualMins === 0) html += "Wala pang isang minuto? Hindi mo yata pinindot yung play nang matagal! 😂 Pero saved na as done sa database.";
-                    else if (diff > 10) html += "🚀 <strong>Superb Focus!</strong> Natapos mo nang mas maaga kaysa sa expected time natin. Good job!";
-                    else if (Math.abs(diff) <= 10) html += "⏱️ <strong>Right on track.</strong> Sakto sa oras yung pacing mo at yung estimate natin.";
-                    else html += "💡 Medyo sumobra tayo sa inilaang oras. Normal lang 'yan lalo na kung mahirap na topic. Bawi next block!";
-                } else { html += "✅ Natapos mo rin! Wala tayong set na target time, pero ang mahalaga ay nai-track at pumasok sa Cloud records natin ang focus time mo."; }
-                html += `</p>`;
-            }
+            titleElement.innerText = "🎉 Task Completed!"; 
+            html += `</div><p style="text-align: left;">Awesome! Na-log na natin yung timeline nito at naka-mark na as done. Saved na 'to sa Cloud natin! ☁️🚀</p>`;
+            
             textElement.innerHTML = html; document.getElementById('aiModal').style.display = 'flex';
         }
         window.closeModal = function() { document.getElementById('aiModal').style.display = 'none'; }
 
-        // Pambura ng item sa resibo
         window.deleteReceiptItem = async function(id) {
             if(confirm("Sure ka na ba bes? Buburahin natin 'to sa records mo ah!")) {
                 await deleteFromDB('tasks', id);
-                openReceipts(); // I-refresh ang resibo para mawala agad sa screen
+                openReceipts(); 
             }
         }
 

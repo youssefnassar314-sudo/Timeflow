@@ -411,21 +411,44 @@ onSnapshot(collection(db, "habits"), (snapshot) => {
                             let catEmoji = cat === 'School' ? '🎓' : (cat === 'Work' ? '💼' : '🌱');
                             let catBadge = `<span class="badge ${catClass}">${catEmoji} ${cat}</span>`;
 
+                            // 🔥 BACKGROUND TIMER LOGIC (Memory Check) 🔥
+                            let savedSecs = parseInt(localStorage.getItem('paused_' + id)) || 0;
+                            let activeStartTime = localStorage.getItem('timer_' + id);
+                            let isPlaying = false;
+                            
+                            // Kung may naka-save na start time, i-calculate kung ilang oras na lumipas
+                            if (activeStartTime) {
+                                savedSecs = Math.floor((Date.now() - parseInt(activeStartTime)) / 1000);
+                                isPlaying = true;
+                            }
+
                             const li = document.createElement('li');
-                            li.id = `task-${id}`; li.dataset.id = id; li.dataset.estMins = data.estMins || 0; li.dataset.taskName = data.taskName || 'Task'; li.dataset.secondsElapsed = 0;
+                            li.id = `task-${id}`; li.dataset.id = id; li.dataset.estMins = data.estMins || 0; li.dataset.taskName = data.taskName || 'Task'; 
+                            li.dataset.secondsElapsed = savedSecs;
 
                             li.innerHTML = `
                                 <div class="task-header"><div><div class="task-title">${data.taskName || 'Task'}</div><div class="task-badges">${catBadge} ${dateBadge} ${estString}</div></div><button class="delete-btn" onclick="deleteFromDB('tasks', '${id}')">×</button></div>
-                                <div class="timer-section"><div class="timer-display">00:00:00</div>
+                                <div class="timer-section"><div class="timer-display">${formatTime(savedSecs)}</div>
                                     <div class="timer-btns">
-                                        <button class="icon-btn play-btn" onclick="startTimer(this)">▶️ Play</button>
-                                        <button class="icon-btn pause-btn" onclick="pauseTimer(this)" style="display:none;">⏸️ Pause</button>
+                                        <button class="icon-btn play-btn" onclick="startTimer(this)" style="display: ${isPlaying ? 'none' : 'inline-block'};">▶️ Play</button>
+                                        <button class="icon-btn pause-btn" onclick="pauseTimer(this)" style="display: ${isPlaying ? 'inline-block' : 'none'};">⏸️ Pause</button>
                                         <button class="icon-btn stop-btn" onclick="stopTimer(this)">⏹️ Stop</button>
                                         <button class="icon-btn done-btn" onclick="markDone(this)">✅ Done</button>
                                     </div>
                                 </div>
                             `;
                             list.appendChild(li);
+
+                            // Kung naiwan siyang naka-play, paandarin ulit automatically!
+                            if (isPlaying) {
+                                let display = li.querySelector('.timer-display');
+                                li.timerInterval = setInterval(() => { 
+                                    let currentSecs = Math.floor((Date.now() - parseInt(activeStartTime)) / 1000);
+                                    li.dataset.secondsElapsed = currentSecs; 
+                                    display.innerText = formatTime(currentSecs); 
+                                }, 1000);
+                            }
+
                         } else {
                             totalTasks++;
                             totalMins += (data.actualMins || 0);
@@ -433,12 +456,7 @@ onSnapshot(collection(db, "habits"), (snapshot) => {
                     });
                     updateDashboard();
                 }, (error) => console.error("Tasks Error:", error));
-
-            } catch (err) {
-                console.error("Critical error starting listeners:", err);
-            }
-        }
-
+                
         // ==========================================
         // WRITING TO FIREBASE
         // ==========================================
@@ -571,17 +589,40 @@ if (!GEMINI_API_KEY) {
         }
 
         // ==========================================
-        // TIMER LOGIC
+        // TIMER LOGIC (BACKGROUND SUPPORTED)
         // ==========================================
         window.startTimer = function(btn) {
             const li = btn.closest('li'); const display = li.querySelector('.timer-display');
             btn.style.display = 'none'; li.querySelector('.pause-btn').style.display = 'inline-block';
-            li.timerInterval = setInterval(() => { let currentSecs = parseInt(li.dataset.secondsElapsed); currentSecs += 60; li.dataset.secondsElapsed = currentSecs; display.innerText = formatTime(currentSecs); }, 1000); 
+            
+            // I-save ang exact time na nag-play sa memory ng laptop/phone
+            let startTime = Date.now() - (parseInt(li.dataset.secondsElapsed) * 1000);
+            localStorage.setItem('timer_' + li.dataset.id, startTime);
+            localStorage.removeItem('paused_' + li.dataset.id);
+
+            li.timerInterval = setInterval(() => { 
+                let currentSecs = Math.floor((Date.now() - startTime) / 1000);
+                li.dataset.secondsElapsed = currentSecs; 
+                display.innerText = formatTime(currentSecs); 
+            }, 1000); 
         }
-        window.pauseTimer = function(btn) { const li = btn.closest('li'); clearInterval(li.timerInterval); btn.style.display = 'none'; li.querySelector('.play-btn').style.display = 'inline-block'; }
+
+        window.pauseTimer = function(btn) { 
+            const li = btn.closest('li'); clearInterval(li.timerInterval); 
+            btn.style.display = 'none'; li.querySelector('.play-btn').style.display = 'inline-block'; 
+            
+            // I-save ang naipong oras pagka-pause
+            localStorage.removeItem('timer_' + li.dataset.id);
+            localStorage.setItem('paused_' + li.dataset.id, li.dataset.secondsElapsed);
+        }
 
         window.stopTimer = async function(btn) { 
             const li = btn.closest('li'); clearInterval(li.timerInterval); 
+            
+            // Linisin ang memory
+            localStorage.removeItem('timer_' + li.dataset.id);
+            localStorage.removeItem('paused_' + li.dataset.id);
+
             let actualSecs = parseInt(li.dataset.secondsElapsed);
             let actualMins = Math.floor(actualSecs / 60); 
             
@@ -598,6 +639,11 @@ if (!GEMINI_API_KEY) {
         
         window.markDone = async function(btn) { 
             const li = btn.closest('li'); clearInterval(li.timerInterval); 
+            
+            // Linisin ang memory
+            localStorage.removeItem('timer_' + li.dataset.id);
+            localStorage.removeItem('paused_' + li.dataset.id);
+
             let actualSecs = parseInt(li.dataset.secondsElapsed);
             let actualMins = Math.floor(actualSecs / 60); 
             
@@ -630,6 +676,8 @@ if (!GEMINI_API_KEY) {
             
             snapshot.forEach(docSnap => {
                 let data = docSnap.data();
+                data.id = docSnap.id; // 🔥 KINUHA NATIN ANG ID DITO PARA MABURA MAMAYA
+                
                 let dateKey = data.dateCompleted || "Uncategorized Date";
                 if(!tasksByDate[dateKey]) tasksByDate[dateKey] = { tasks: [], totalMins: 0 };
                 
@@ -656,9 +704,12 @@ if (!GEMINI_API_KEY) {
                 info.tasks.forEach(t => {
                     let timeText = t.timeSpan ? t.timeSpan : '--:--';
                     html += `
-                        <div class="receipt-row">
+                        <div class="receipt-row" style="align-items: center;">
                             <span class="receipt-task">1x ${t.taskName}</span>
-                            <span class="receipt-time">${timeText}<br><small>${t.actualMins} mins</small></span>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span class="receipt-time">${timeText}<br><small>${t.actualMins} mins</small></span>
+                                <button class="delete-btn" style="width: 24px; height: 24px; font-size: 16px; padding: 0;" onclick="deleteReceiptItem('${t.id}')" title="Delete this record">×</button>
+                            </div>
                         </div>
                     `;
                 });
@@ -702,6 +753,15 @@ if (!GEMINI_API_KEY) {
             textElement.innerHTML = html; document.getElementById('aiModal').style.display = 'flex';
         }
         window.closeModal = function() { document.getElementById('aiModal').style.display = 'none'; }
+
+        // Pambura ng item sa resibo
+        window.deleteReceiptItem = async function(id) {
+            if(confirm("Sure ka na ba bes? Buburahin natin 'to sa records mo ah!")) {
+                await deleteFromDB('tasks', id);
+                openReceipts(); // I-refresh ang resibo para mawala agad sa screen
+            }
+        }
+
     </script>
 </body>
 </html>
